@@ -1,0 +1,162 @@
+@page "/attendance-tracker"
+@using EventEase.Data
+@using EventEase.Services
+@using System.Text.Json
+@inject IJSRuntime JS
+@inject NavigationService NavigationService
+
+@code {
+    private List<AttendanceTrackerModel> attendances = new List<AttendanceTrackerModel>();
+    private AttendanceTrackerModel newAttendance = new AttendanceTrackerModel();
+    private List<EventCardModel> events = new List<EventCardModel>(); // Add a list to hold events
+    private bool eventExists = false; // Flag to check if the event exists
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load attendances from sessionStorage
+        var storedAttendances = await JS.InvokeAsync<string>("sessionStorage.getItem", "attendances");
+        if (!string.IsNullOrEmpty(storedAttendances))
+        {
+            attendances = JsonSerializer.Deserialize<List<AttendanceTrackerModel>>(storedAttendances);
+        }
+        
+        // Load events from sessionStorage
+        var storedEvents = await JS.InvokeAsync<string>("sessionStorage.getItem", "events");
+        if (!string.IsNullOrEmpty(storedEvents))
+        {
+            events = JsonSerializer.Deserialize<List<EventCardModel>>(storedEvents);
+        }
+
+        newAttendance.EventDate = DateTime.Now;
+    }
+
+    private void OnEventSelectionChange(ChangeEventArgs e)
+    {
+        string selectedEventName = e.Value.ToString();
+        newAttendance.EventName = selectedEventName; // Update the newAttendance model
+        var existingEvent = events.FirstOrDefault(ev => ev.EventName == selectedEventName);
+
+        if (existingEvent != null)
+        {
+            // Populate the event date and location
+            newAttendance.EventDate = existingEvent.Date;
+            newAttendance.EventLocation = existingEvent.Location;
+            eventExists = true;
+        }
+        else
+        {
+            newAttendance.EventDate = DateTime.Now;
+            newAttendance.EventLocation = string.Empty;
+            eventExists = false;
+        }
+    }
+
+    private async Task AddAttendance()
+    {
+        if (eventExists)
+        {
+            attendances.Add(newAttendance);
+
+            // Save attendances to sessionStorage
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "attendances", JsonSerializer.Serialize(attendances));
+
+            newAttendance = new AttendanceTrackerModel(); // Reset the form
+
+            if (newAttendance.EventDate == default)
+            {
+                newAttendance.EventDate = DateTime.Now;
+            }
+        }
+        else
+        {
+            // Handle the case where the event does not exist
+            // Show an error message using a JavaScript alert
+            await JS.InvokeVoidAsync("alert", "The event does not exist.");
+        }
+    }
+
+    private void NavigateHome()
+    {
+        NavigationService.NavigateToHomePage();
+    }
+}
+
+<h3>Attendance Tracker</h3>
+
+@if (attendances.Any())
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Event</th>
+                <th>Date</th>
+                <th>Location</th>
+                <th>Attended</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var attendanceCard in attendances)
+            {
+                <tr>
+                    <td>@attendanceCard.AttendantName</td>
+                    <td>@attendanceCard.EventName</td>
+                    <td>@attendanceCard.EventDate.ToString("dd-MMM-yyyy")</td>
+                    <td>@attendanceCard.EventLocation</td>
+                    <td>@attendanceCard.Attended</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No attendance available.</p>
+}
+
+<br />
+<EditForm Model="@newAttendance" OnValidSubmit="@AddAttendance">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label for="eventName">Event Name:</label>
+        <select id="eventName" @onchange="OnEventSelectionChange" class="modern-input">
+            <option value="">Select an event</option>
+            @foreach (var eventCard in events)
+            {
+                <option value="@eventCard.EventName">@eventCard.EventName</option>
+            }
+        </select>
+        <ValidationMessage For="@(() => newAttendance.EventName)" />
+    </div>
+    <br />
+    <div>
+        <label for="eventDate">Event Date:</label>
+        <InputDate id="eventDate" @bind-Value="newAttendance.EventDate" class="modern-input" maxlength="30" disabled />
+        <ValidationMessage For="@(() => newAttendance.EventDate)" />
+    </div>
+    <br />
+    <div>
+        <label for="eventLocation">Event Location:</label>
+        <InputText id="eventLocation" @bind-Value="newAttendance.EventLocation" class="modern-input" maxlength="100" disabled />
+        <ValidationMessage For="@(() => newAttendance.EventLocation)" />
+    </div>
+    <br />
+    <div>
+        <label for="attendantName">Attendant Name:</label>
+        <InputText id="attendantName" @bind-Value="newAttendance.AttendantName" class="modern-input" maxlength="100" />
+        <ValidationMessage For="@(() => newAttendance.AttendantName)" />
+    </div>
+    <br />
+    <div>
+        <label for="attended">Attended:</label>
+        <InputCheckbox id="attended" @bind-Value="newAttendance.Attended" class="form-check-input" />
+        <ValidationMessage For="@(() => newAttendance.Attended)" />
+    </div>
+    <br />
+    <button type="submit" class="modern-button">Add Attendance</button>
+</EditForm>
+
+<br />
+<button @onclick="NavigateHome" class="modern-button">Back to Home Page</button>

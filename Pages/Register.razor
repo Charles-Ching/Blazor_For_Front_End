@@ -1,0 +1,98 @@
+@page "/register"
+@using System.ComponentModel.DataAnnotations
+@using EventEase.Data
+@using EventEase.Services
+@inject IJSRuntime JS
+@using System.Text.Json
+@inject NavigationService NavigationService
+
+<h3>Registration List</h3>
+
+@if (registrations.Any())
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>Report provided
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var registrationCard in registrations)
+            {
+                <tr>
+                    <td>@registrationCard.Name</td>
+                    <td>@registrationCard.Email</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+else
+{
+    <p>No registration available.</p>
+}
+
+<br />
+<EditForm Model="@registrationModel" OnValidSubmit="@NewRegistration">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    
+    <div>
+        <label for="name"><strong>Name:</strong></label>
+        <InputText id="name" @bind-Value="registrationModel.Name" class="modern-input" maxlength="100" />
+    </div>
+    <br />
+    <div>
+        <label for="email"><strong>Email:</strong></label>
+        <InputText id="email" type="email" @bind-Value="registrationModel.Email" class="modern-input" maxlength="100" />
+    </div>
+    <br />
+    <button class="modern-button" type="submit">Register</button>
+</EditForm>
+
+@* @if (!string.IsNullOrEmpty(CompletionMessage))
+{
+    <p>@CompletionMessage</p>
+} *@
+
+<br />
+<button @onclick="NavigateHome" class="modern-button">Back to Home Page</button>
+
+@code {
+    private RegistrationModel registrationModel = new RegistrationModel();
+    private List<RegistrationModel> registrations = new List<RegistrationModel>();
+
+protected override async Task OnInitializedAsync()
+    {
+        // Load registrations from sessionStorage
+        var storedRegistrations = await JS.InvokeAsync<string>("sessionStorage.getItem", "registrations");
+        if (!string.IsNullOrEmpty(storedRegistrations))
+        {
+            registrations = JsonSerializer.Deserialize<List<RegistrationModel>>(storedRegistrations);
+        }
+
+    }
+
+    private async Task NewRegistration()
+    {
+        // Add the new registration to the list
+        registrations.Add(new RegistrationModel 
+        {
+            Name = registrationModel.Name,
+            Email = registrationModel.Email
+        });
+
+        // Save registrations to sessionStorage
+        await JS.InvokeVoidAsync("sessionStorage.setItem", "registrations", JsonSerializer.Serialize(registrations));
+
+        // Reset the form
+        registrationModel = new RegistrationModel();
+    }
+
+     private void NavigateHome()
+    {
+        NavigationService.NavigateToHomePage();
+    }
+}

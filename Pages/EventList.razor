@@ -1,0 +1,115 @@
+@page "/event-list"
+@using EventEase.Data
+@using EventEase.Services
+@using System.Text.Json
+@inject IJSRuntime JS
+@inject NavigationService NavigationService
+
+<h3>Event List</h3>
+
+@if (events.Any())
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Event</th>
+                <th>Date</th>
+                <th>Location</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var eventCard in events)
+            {
+                <tr>
+                    <td>@eventCard.EventName</td>
+                    <td>@eventCard.Date.ToString("dd-MMM-yyyy")</td>
+                    <td>@eventCard.Location</td>
+                </tr>
+            }
+        </tbody>
+    </table>    
+}
+else
+{
+    <p>No events available.</p>
+}
+
+<br />
+<EditForm Model="@newEvent" OnValidSubmit="@AddEvent">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label><strong>Event Name:</strong></label>
+        <InputText @bind-Value="@newEvent.EventName" class="modern-input" maxlength="100"/>
+        <ValidationMessage For="@(() => newEvent.EventName)" />
+    </div>
+    <br />
+    <label><strong>Date:</strong></label>
+    <div>
+        <InputDate @bind-Value="@newEvent.Date" class="modern-input" maxlength="30" />
+        <ValidationMessage For="@(() => newEvent.Date)" />
+    </div>
+    <br />
+    <div>
+        <label><strong>Location:</strong></label>
+        <InputText @bind-Value="@newEvent.Location" class="modern-input" maxlength="100"/>
+        <ValidationMessage For="@(() => newEvent.Location)" />
+    </div>
+    
+    <br />
+    <button class="modern-button" type="submit">Add Event</button>
+</EditForm>
+
+<br />
+<button @onclick="NavigateHome" class="modern-button">Back to Home Page</button>
+
+@code {
+    private List<EventCardModel> events = new List<EventCardModel>();
+
+    private EventCardModel newEvent = new EventCardModel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Clear storage when app initializes
+        // await JS.InvokeVoidAsync("localStorage.clear");
+
+        // Load events from localStorage
+        // var storedEvents = await JS.InvokeAsync<string>("localStorage.getItem", "events");
+        // if (!string.IsNullOrEmpty(storedEvents))
+        // {
+        //    events = JsonSerializer.Deserialize<List<EventCardModel>>(storedEvents);
+        //}
+        // Load events from sessionStorage
+        var storedEvents = await JS.InvokeAsync<string>("sessionStorage.getItem", "events");
+        if (!string.IsNullOrEmpty(storedEvents))
+        {
+            events = JsonSerializer.Deserialize<List<EventCardModel>>(storedEvents);
+        }
+
+        newEvent.Date = DateTime.Now;
+    }
+    private async Task AddEvent()
+    {
+
+        events.Add(newEvent);
+
+        // Save events to localStorage
+        // await JS.InvokeVoidAsync("localStorage.setItem", "events", JsonSerializer.Serialize(events));
+
+        // Save events to sessionStorage
+        await JS.InvokeVoidAsync("sessionStorage.setItem", "events", JsonSerializer.Serialize(events));
+
+        newEvent = new EventCardModel(); // Reset the form
+
+        if (newEvent.Date == default)
+        {
+            newEvent.Date = DateTime.Now;
+        }
+    }
+
+   private void NavigateHome()
+    {
+        NavigationService.NavigateToHomePage();
+    }
+}

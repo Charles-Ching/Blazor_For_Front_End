@@ -1,0 +1,68 @@
+/* Stytle overrides for EventEase App */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th, td {
+    text-align: left;
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+th {
+    background-color: #f2f2f2;
+}
+label {
+    display: inline-block;
+    float: left;
+    clear: left;
+    width: 180px;
+    text-align: left; /*Change to right here if you want it close to the inputs*/
+}
+inputtext {
+    display: inline-block;
+    float: left;
+}
+
+.modern-button {
+    background-color: #007BFF;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 12px;
+    transition-duration: 0.4s;
+}
+
+.modern-button:hover {
+    background-color: #0056b3;
+    color: white;
+}
+
+.modern-input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    font-size: 16px;
+    width: 60%; 
+    box-sizing: border-box;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    display: inline-block;
+}
+
+.modern-input:focus {
+    border-color: #007BFF;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    outline: none;
+}
+
+.form-check-input {
+    width: 20px; 
+    height: 20px; 
+    margin: 5px; 
+    border: 1px solid #ccc; 
+}
